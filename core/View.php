@@ -7,9 +7,13 @@ namespace OpenWHM\Core;
 class View
 {
     private $data = [];
-    private $sections = [];
-    private $currentSection = null;
     private $layout = null;
+    public $session;
+    
+    public function __construct()
+    {
+        $this->session = Application::getInstance()->getSession();
+    }
     
     /**
      * Render a template
@@ -19,13 +23,13 @@ class View
         $this->data = $data;
         
         // Add common data
-        $this->data['session'] = Application::getInstance()->getSession();
-        $this->data['csrf_token'] = $this->data['session']->generateCsrfToken();
+        $this->data['session'] = $this->session;
+        $this->data['csrf_token'] = $this->session->generateCsrfToken();
         $this->data['flash'] = [
-            'success' => $this->data['session']->getFlash('success'),
-            'error' => $this->data['session']->getFlash('error'),
-            'warning' => $this->data['session']->getFlash('warning'),
-            'info' => $this->data['session']->getFlash('info')
+            'success' => $this->session->getFlash('success'),
+            'error' => $this->session->getFlash('error'),
+            'warning' => $this->session->getFlash('warning'),
+            'info' => $this->session->getFlash('info')
         ];
         
         // Extract data to variables
@@ -35,22 +39,45 @@ class View
         $templatePath = $this->resolveTemplatePath($template);
         
         if (!file_exists($templatePath)) {
-            throw new \Exception("Template not found: {$template}");
+            throw new \Exception("Template not found: {$template} (looking for: {$templatePath})");
         }
         
-        // Start output buffering
+        // Start output buffering for template content
         ob_start();
         include $templatePath;
         $content = ob_get_clean();
         
+        // If template already includes DOCTYPE (has its own layout), output as-is
+        if (stripos($content, '<!DOCTYPE') !== false || stripos($content, '<html') !== false) {
+            echo $content;
+            return;
+        }
+        
+        // Determine layout based on template type
+        if ($this->layout === null) {
+            // Auto-detect layout from template path
+            if (strpos($template, 'frontend.') === 0) {
+                $this->layout = 'frontend.layouts.main';
+            } elseif (strpos($template, 'client.') === 0) {
+                $this->layout = 'client.layouts.main';
+            } elseif (strpos($template, 'admin.') === 0) {
+                $this->layout = 'admin.layouts.main';
+            }
+        }
+        
         // If layout is set, render within layout
         if ($this->layout) {
             $layoutPath = $this->resolveTemplatePath($this->layout);
-            $this->sections['content'] = $content;
             
-            ob_start();
-            include $layoutPath;
-            $content = ob_get_clean();
+            if (file_exists($layoutPath)) {
+                // Make content available to layout
+                $this->data['content'] = $content;
+                extract($this->data);
+                
+                ob_start();
+                include $layoutPath;
+                $content = ob_get_clean();
+            }
             
             $this->layout = null;
         }
@@ -63,48 +90,23 @@ class View
      */
     private function resolveTemplatePath($template)
     {
-        // Check if it's a full path already
-        if (strpos($template, '/') === 0 || strpos($template, ':\\') !== false) {
-            return $template;
-        }
-        
-        return TEMPLATE_PATH . '/' . str_replace('.', '/', $template) . '.php';
+        return ROOT_PATH . '/templates/' . str_replace('.', '/', $template) . '.php';
     }
     
     /**
      * Set layout
      */
-    public function layout($layout)
+    public function setLayout($layout)
     {
         $this->layout = $layout;
     }
     
     /**
-     * Start a section
+     * Disable layout
      */
-    public function section($name)
+    public function noLayout()
     {
-        $this->currentSection = $name;
-        ob_start();
-    }
-    
-    /**
-     * End current section
-     */
-    public function endSection()
-    {
-        if ($this->currentSection) {
-            $this->sections[$this->currentSection] = ob_get_clean();
-            $this->currentSection = null;
-        }
-    }
-    
-    /**
-     * Yield a section
-     */
-    public function yield($name, $default = '')
-    {
-        echo $this->sections[$name] ?? $default;
+        $this->layout = false;
     }
     
     /**
@@ -174,3 +176,4 @@ class View
         return SYSTEM_URL . '/assets/' . ltrim($path, '/');
     }
 }
+

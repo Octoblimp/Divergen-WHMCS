@@ -11,8 +11,8 @@ define('ROOT_PATH', __DIR__);
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
 $path = parse_url($requestUri, PHP_URL_PATH);
 
-if ($path === '/install' || strpos($path, '/install') === 0) {
-    require_once ROOT_PATH . '/install';
+if ($path === '/install' || strpos($path, '/install/') === 0) {
+    require_once ROOT_PATH . '/install/index.php';
     exit;
 }
 

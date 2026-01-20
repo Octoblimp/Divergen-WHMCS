@@ -7,7 +7,7 @@
 session_start();
 
 define('OPENWH', true);
-define('ROOT_PATH', __DIR__);
+define('ROOT_PATH', dirname(__DIR__)); // Parent directory (main app folder)
 define('INSTALLER_VERSION', '1.0.0');
 
 // Check if already installed
@@ -50,6 +50,68 @@ function handleAjaxRequest()
         default:
             echo json_encode(['error' => 'Invalid action']);
     }
+}
+
+/**
+ * Parse SQL file into individual statements
+ * Handles strings containing semicolons correctly
+ */
+function parseSqlStatements($sql)
+{
+    // Remove SQL comments first
+    $sql = preg_replace('/--[^\n]*\n/', "\n", $sql);
+    $sql = preg_replace('/\/\*.*?\*\//s', '', $sql);
+    
+    $statements = [];
+    $currentStatement = '';
+    $inString = false;
+    $stringChar = '';
+    $length = strlen($sql);
+    
+    for ($i = 0; $i < $length; $i++) {
+        $char = $sql[$i];
+        $prevChar = ($i > 0) ? $sql[$i - 1] : '';
+        
+        // Handle string boundaries
+        if (($char === '"' || $char === "'" || $char === '`') && $prevChar !== '\\') {
+            if (!$inString) {
+                $inString = true;
+                $stringChar = $char;
+            } elseif ($char === $stringChar) {
+                // Check for escaped quote (doubled)
+                $nextChar = ($i < $length - 1) ? $sql[$i + 1] : '';
+                if ($nextChar === $char) {
+                    $currentStatement .= $char;
+                    $i++; // Skip next char
+                } else {
+                    $inString = false;
+                }
+            }
+        }
+        
+        // Handle statement termination
+        if ($char === ';' && !$inString) {
+            $stmt = trim($currentStatement);
+            if (!empty($stmt) && 
+                stripos($stmt, 'SET FOREIGN_KEY_CHECKS') !== 0 &&
+                stripos($stmt, 'SET SQL_MODE') !== 0) {
+                $statements[] = $stmt;
+            }
+            $currentStatement = '';
+        } else {
+            $currentStatement .= $char;
+        }
+    }
+    
+    // Add any remaining statement
+    $stmt = trim($currentStatement);
+    if (!empty($stmt) && 
+        stripos($stmt, 'SET FOREIGN_KEY_CHECKS') !== 0 &&
+        stripos($stmt, 'SET SQL_MODE') !== 0) {
+        $statements[] = $stmt;
+    }
+    
+    return $statements;
 }
 
 /**
@@ -199,20 +261,65 @@ function runInstallation()
             $schema = str_replace('owh_', $dbPrefix, $schema);
         }
         
-        // Execute schema (split by semicolons)
-        $statements = array_filter(array_map('trim', explode(';', $schema)));
-        foreach ($statements as $statement) {
-            if (!empty($statement) && stripos($statement, '--') !== 0) {
+        // Execute schema using proper SQL parsing
+        // Disable foreign key checks first
+        $pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
+        $pdo->exec("SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO'");
+        
+        // Parse SQL properly - handle strings with semicolons
+        $statements = parseSqlStatements($schema);
+        
+        $errors = [];
+        $successCount = 0;
+        
+        foreach ($statements as $index => $statement) {
+            $statement = trim($statement);
+            if (empty($statement)) {
+                continue;
+            }
+            
+            try {
                 $pdo->exec($statement);
+                $successCount++;
+            } catch (PDOException $e) {
+                $errorMsg = $e->getMessage();
+                // Only track non-duplicate/exists errors
+                if (strpos($errorMsg, 'Duplicate') === false && 
+                    strpos($errorMsg, 'already exists') === false) {
+                    // Get first 100 chars of statement for context
+                    $stmtPreview = substr($statement, 0, 100);
+                    $errors[] = "Statement $index: $errorMsg (SQL: $stmtPreview...)";
+                }
             }
         }
+        
+        // Re-enable foreign key checks
+        $pdo->exec("SET FOREIGN_KEY_CHECKS = 1");
+        
+        // Verify critical tables exist
+        $criticalTables = ['admins', 'clients', 'products', 'invoices', 'services'];
+        $missingTables = [];
+        foreach ($criticalTables as $table) {
+            $tableCheck = $pdo->query("SHOW TABLES LIKE '{$dbPrefix}{$table}'");
+            if (!$tableCheck->fetchColumn()) {
+                $missingTables[] = $table;
+            }
+        }
+        
+        if (!empty($missingTables)) {
+            throw new Exception("Failed to create critical tables: " . implode(", ", $missingTables) . 
+                ". Errors: " . implode("; ", array_slice($errors, 0, 5)));
+        }
+        
+        // Delete the default admin from schema and create user's admin account
+        $pdo->exec("DELETE FROM {$dbPrefix}admins WHERE email = 'admin@example.com'");
         
         // Create admin account
         $hashedPassword = password_hash($adminPassword, PASSWORD_BCRYPT, ['cost' => 12]);
         $stmt = $pdo->prepare("
             INSERT INTO {$dbPrefix}admins (email, password, name, role, created_at, updated_at)
             VALUES (?, ?, ?, 'super_admin', NOW(), NOW())
-            ON DUPLICATE KEY UPDATE password = VALUES(password), name = VALUES(name)
+            ON DUPLICATE KEY UPDATE password = VALUES(password), name = VALUES(name), role = 'super_admin'
         ");
         $stmt->execute([$adminEmail, $hashedPassword, $adminName]);
         

@@ -1,7 +1,6 @@
 <?php
 $page = 'dashboard';
 $title = 'Dashboard';
-ob_start();
 ?>
 
 <!-- Welcome Message -->
@@ -241,8 +240,3 @@ ob_start();
         </div>
     </div>
 </div>
-
-<?php
-$content = ob_get_clean();
-include __DIR__ . '/../layouts/main.php';
-?>

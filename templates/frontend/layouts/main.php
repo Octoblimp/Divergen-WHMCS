@@ -139,7 +139,8 @@
         }
         
         /* Domain Search */
-        .domain-search {
+        .domain-search,
+        .domain-search-box {
             background: #fff;
             border-radius: 1rem;
             padding: 1.5rem;
@@ -147,20 +148,41 @@
             margin-top: 2rem;
         }
         
-        .domain-search .form-control {
+        .domain-search .form-control,
+        .domain-search-box .form-control {
             border: 2px solid #e3e6f0;
             padding: 1rem 1.5rem;
             font-size: 1.1rem;
             border-radius: 0.5rem;
         }
         
-        .domain-search .btn {
+        .domain-search .btn,
+        .domain-search-box .btn {
             padding: 1rem 2rem;
             font-weight: 600;
         }
         
+        .tld-prices {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .tld-prices span {
+            display: inline-block;
+        }
+        
+        .tld-prices strong {
+            color: #333;
+            font-weight: 700;
+        }
+        
         /* Features Section */
-        .features {
+        .features,
+        .features-section {
             padding: 6rem 0;
         }
         
@@ -198,9 +220,22 @@
         }
         
         /* Pricing Section */
-        .pricing {
+        .pricing,
+        .pricing-section {
             padding: 6rem 0;
             background: #f8f9fc;
+        }
+        
+        .badge-popular {
+            position: absolute;
+            top: -12px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
         }
         
         .section-title {
@@ -221,6 +256,7 @@
             transition: all 0.3s;
             border: 2px solid transparent;
             height: 100%;
+            position: relative;
         }
         
         .pricing-card:hover,
