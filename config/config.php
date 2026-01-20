@@ -9,12 +9,21 @@ if (!defined('OPENWH')) {
     die('Direct access not permitted');
 }
 
+// Check if installed
+define('INSTALLED', file_exists(__DIR__ . '/installed.lock'));
+
 // System Settings
 define('SYSTEM_NAME', 'OpenWHM');
 define('SYSTEM_VERSION', '1.0.0');
 define('SYSTEM_URL', 'https://yourdomain.com');
+define('BASE_URL', SYSTEM_URL);
 define('ADMIN_URL', SYSTEM_URL . '/admin');
 define('CLIENT_URL', SYSTEM_URL . '/client');
+
+// Company Settings (aliases for compatibility)
+define('COMPANY_NAME', SYSTEM_NAME);
+define('APP_NAME', SYSTEM_NAME);
+define('APP_URL', SYSTEM_URL);
 
 // Database Configuration
 define('DB_HOST', 'localhost');
@@ -25,7 +34,7 @@ define('DB_PREFIX', 'owh_');
 define('DB_CHARSET', 'utf8mb4');
 
 // Security Settings
-define('ENCRYPTION_KEY', 'your-32-character-encryption-key');
+define('ENCRYPTION_KEY', 'change-this-to-32-character-key!');
 define('SESSION_NAME', 'OPENWHM_SESSION');
 define('CSRF_TOKEN_NAME', 'owh_csrf_token');
 define('PASSWORD_HASH_COST', 12);
@@ -36,7 +45,7 @@ define('MAIL_PORT', 587);
 define('MAIL_USERNAME', 'noreply@yourdomain.com');
 define('MAIL_PASSWORD', '');
 define('MAIL_FROM_EMAIL', 'noreply@yourdomain.com');
-define('MAIL_FROM_NAME', 'OpenWHM');
+define('MAIL_FROM_NAME', SYSTEM_NAME);
 define('MAIL_ENCRYPTION', 'tls');
 
 // Currency Settings
