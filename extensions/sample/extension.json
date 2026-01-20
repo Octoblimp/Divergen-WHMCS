@@ -1,0 +1,57 @@
+{
+    "name": "Sample Extension",
+    "description": "A sample extension demonstrating the OpenWHM extension system with hooks, admin pages, and client area widgets.",
+    "version": "1.0.0",
+    "author": "OpenWHM Team",
+    "website": "https://example.com",
+    "requires": {
+        "php": ">=7.4",
+        "openwHM": ">=1.0.0"
+    },
+    "hooks": [
+        "ClientLogin",
+        "ClientLogout",
+        "InvoicePaid",
+        "TicketOpened",
+        "ServiceCreated",
+        "DailyJob"
+    ],
+    "admin_menu": {
+        "title": "Sample Extension",
+        "icon": "fas fa-puzzle-piece",
+        "pages": [
+            {
+                "slug": "sample_dashboard",
+                "title": "Dashboard"
+            },
+            {
+                "slug": "sample_settings",
+                "title": "Settings"
+            }
+        ]
+    },
+    "client_widgets": [
+        {
+            "name": "welcome_message",
+            "title": "Welcome Widget",
+            "position": "sidebar"
+        }
+    ],
+    "settings": {
+        "enabled": {
+            "label": "Enable Extension",
+            "type": "checkbox",
+            "default": true
+        },
+        "welcome_message": {
+            "label": "Welcome Message",
+            "type": "text",
+            "default": "Welcome to our service!"
+        },
+        "log_logins": {
+            "label": "Log Client Logins",
+            "type": "checkbox",
+            "default": true
+        }
+    }
+}
