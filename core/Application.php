@@ -188,6 +188,9 @@ class Application
             $router->post('/servers/add', 'Admin\\ServerController@store');
             $router->get('/servers/{id}/edit', 'Admin\\ServerController@edit');
             $router->post('/servers/{id}/edit', 'Admin\\ServerController@update');
+            $router->get('/servers/{id}/test', 'Admin\\ServerController@test');
+            $router->get('/servers/{id}/stats', 'Admin\\ServerController@stats');
+            $router->post('/servers/{id}/delete', 'Admin\\ServerController@delete');
             
             // Extensions
             $router->get('/extensions', 'Admin\\ExtensionController@index');
@@ -203,6 +206,11 @@ class Application
             $router->post('/settings/email', 'Admin\\SettingsController@updateEmail');
             $router->get('/settings/payment', 'Admin\\SettingsController@payment');
             $router->post('/settings/payment', 'Admin\\SettingsController@updatePayment');
+            $router->get('/settings/support', 'Admin\\SettingsController@support');
+            $router->post('/settings/support', 'Admin\\SettingsController@updateSupport');
+            
+            // Analytics & Reports
+            $router->get('/reports', 'Admin\\ReportsController@index');
         });
         
         // API routes

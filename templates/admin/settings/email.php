@@ -11,15 +11,43 @@ ob_start();
     <h1 class="h3 mb-0"><i class="fas fa-envelope text-primary me-2"></i> Email Settings</h1>
 </div>
 
+<!-- Settings Navigation Tabs -->
+<div class="mb-4">
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link" href="<?php echo ADMIN_URL; ?>/settings">
+                <i class="fas fa-building me-2"></i> General
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="<?php echo ADMIN_URL; ?>/settings/email">
+                <i class="fas fa-envelope me-2"></i> Email
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="<?php echo ADMIN_URL; ?>/settings/payment">
+                <i class="fas fa-credit-card me-2"></i> Payment
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="<?php echo ADMIN_URL; ?>/settings/support">
+                <i class="fas fa-headset me-2"></i> Support
+            </a>
+        </li>
+    </ul>
+</div>
+
 <?php $this->flashMessages(); ?>
 
-<form method="POST" action="<?php echo ADMIN_URL; ?>/settings/email/save">
+<form method="POST" action="<?php echo ADMIN_URL; ?>/settings/email">
+    <?php echo csrfField(); ?>
+    
     <div class="row">
         <div class="col-lg-8">
             <!-- Global Settings -->
             <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Global Email Settings</h5>
+                <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h5 class="mb-0 text-white"><i class="fas fa-cog me-2"></i> Global Email Settings</h5>
                 </div>
                 <div class="card-body">
                     <div class="form-check form-switch mb-4">
@@ -68,8 +96,8 @@ ob_start();
             
             <!-- SMTP Settings -->
             <div class="card mb-4" id="smtpSettings" style="<?php echo ($settings['mail_method'] ?? '') !== 'smtp' ? 'display:none;' : ''; ?>">
-                <div class="card-header">
-                    <h5 class="mb-0">SMTP Configuration</h5>
+                <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <h5 class="mb-0 text-white"><i class="fas fa-server me-2"></i> SMTP Configuration</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -124,8 +152,8 @@ ob_start();
             
             <!-- SendGrid Settings -->
             <div class="card mb-4" id="sendgridSettings" style="<?php echo ($settings['mail_method'] ?? '') !== 'sendgrid' ? 'display:none;' : ''; ?>">
-                <div class="card-header">
-                    <h5 class="mb-0">SendGrid Configuration</h5>
+                <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <h5 class="mb-0 text-white"><i class="fas fa-cloud me-2"></i> SendGrid Configuration</h5>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
@@ -141,8 +169,8 @@ ob_start();
             
             <!-- Disable Individual Email Types -->
             <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Disable Email Types</h5>
+                <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                    <h5 class="mb-0 text-white"><i class="fas fa-ban me-2"></i> Disable Email Types</h5>
                 </div>
                 <div class="card-body">
                     <p class="text-muted">Selectively disable specific types of emails:</p>
@@ -204,8 +232,8 @@ ob_start();
             
             <!-- Additional Options -->
             <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Additional Options</h5>
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-sliders-h me-2"></i> Additional Options</h5>
                 </div>
                 <div class="card-body">
                     <div class="form-check mb-3">
@@ -243,15 +271,15 @@ ob_start();
                         <i class="fas fa-save me-1"></i> Save Settings
                     </button>
                     
-                    <a href="<?php echo ADMIN_URL; ?>/email/logs" class="btn btn-outline-secondary w-100">
-                        <i class="fas fa-history me-1"></i> View Email Log
+                    <a href="<?php echo ADMIN_URL; ?>/settings" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-arrow-left me-1"></i> Back
                     </a>
                 </div>
             </div>
             
             <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Send Test Email</h5>
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-envelope-open-text me-2"></i> Send Test Email</h5>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">

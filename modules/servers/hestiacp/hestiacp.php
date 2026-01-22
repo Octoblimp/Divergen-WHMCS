@@ -13,8 +13,8 @@ class hestiacp
 {
     private $host;
     private $port;
-    private $username;
-    private $password;
+    private $apiKey;
+    private $apiSecret;
     
     /**
      * Get module configuration fields
@@ -25,7 +25,7 @@ class hestiacp
             'hostname' => [
                 'label' => 'Hostname',
                 'type' => 'text',
-                'description' => 'HestiaCP server hostname'
+                'description' => 'HestiaCP server hostname or IP address'
             ],
             'port' => [
                 'label' => 'Port',
@@ -33,15 +33,15 @@ class hestiacp
                 'default' => '8083',
                 'description' => 'HestiaCP port (default: 8083)'
             ],
-            'username' => [
-                'label' => 'Admin Username',
+            'api_key' => [
+                'label' => 'API Key',
                 'type' => 'text',
-                'description' => 'HestiaCP admin username'
+                'description' => 'HestiaCP API Key (generate in admin panel under API)'
             ],
-            'password' => [
-                'label' => 'Admin Password',
+            'api_secret' => [
+                'label' => 'API Secret',
                 'type' => 'password',
-                'description' => 'HestiaCP admin password'
+                'description' => 'HestiaCP API Secret (generate in admin panel under API)'
             ]
         ];
     }
@@ -519,33 +519,40 @@ class hestiacp
     {
         $this->host = $server['hostname'];
         $this->port = $server['port'] ?? 8083;
-        $this->username = $server['username'];
-        $this->password = $this->decryptPassword($server['password']);
+        $this->apiKey = $server['api_key'];
+        $this->apiSecret = $this->decryptPassword($server['api_secret']);
     }
     
     /**
-     * Make API call to HestiaCP
+     * Make API call to HestiaCP using API Key authentication
      */
     private function apiCall($command, $args = [])
     {
         $url = "https://{$this->host}:{$this->port}/api/";
         
-        $postData = [
-            'user' => $this->username,
-            'password' => $this->password,
-            'returncode' => 'yes',
-            'cmd' => $command
+        // Generate timestamp
+        $timestamp = time();
+        
+        // Build query parameters
+        $query = [
+            'cmd' => $command,
+            'key' => $this->apiKey,
+            'timestamp' => $timestamp
         ];
         
         // Add command arguments
         foreach ($args as $i => $arg) {
-            $postData['arg' . ($i + 1)] = $arg;
+            $query['arg' . ($i + 1)] = $arg;
         }
         
+        // Create request signature
+        $sig = $this->createSignature($query);
+        $query['signature'] = $sig;
+        
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_URL, $url . '?' . http_build_query($query));
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, '');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 60);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -559,6 +566,11 @@ class hestiacp
         if ($error) {
             Logger::error("HestiaCP API error: " . $error);
             return ['code' => -1, 'error' => 'Connection error: ' . $error];
+        }
+        
+        if ($httpCode !== 200) {
+            Logger::error("HestiaCP HTTP error: {$httpCode}");
+            return ['code' => $httpCode, 'error' => 'HTTP Error ' . $httpCode, 'output' => $response];
         }
         
         // Parse response
@@ -578,6 +590,21 @@ class hestiacp
             'code' => 0,
             'output' => $output
         ];
+    }
+    
+    /**
+     * Create HMAC-SHA256 signature for API request
+     */
+    private function createSignature($params)
+    {
+        // Sort parameters alphabetically
+        ksort($params);
+        
+        // Create query string without signature
+        $queryString = http_build_query($params);
+        
+        // Create signature
+        return hash_hmac('sha256', $queryString, $this->apiSecret);
     }
     
     /**
